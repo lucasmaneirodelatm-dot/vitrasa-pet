@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="es">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VITRASA Pet</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .bus-image {
+      width: 200px;
+      height: 150px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+      transition: transform 0.3s ease;
+    }
+    
+    .bus-image:hover {
+      transform: scale(1.05);
+    }
+
+    .stat-bar {
+      background: linear-gradient(90deg, #e0e7ff 0%, #f3e8ff 100%);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 24px;
+    }
+
+    .stat-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+    }
+
+    .action-btn {
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
+
+    .bus-type-select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid white;
+      background: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .message-box {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+    }
+
+    .sleeping-animation {
+      animation: sleep 2s ease-in-out infinite;
+    }
+
+    @keyframes sleep {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full w-full overflow-auto">
+  <main class="h-full w-full bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 p-8">
+   <div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+     <h1 id="main-title" class="text-5xl font-bold text-white mb-2">VITRASA Pet</h1>
+     <p class="text-white text-lg">Cuida tu autobús favorito 🚌</p>
+    </div><!-- Bus Selection -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+     <h2 class="text-2xl font-bold text-gray-800 mb-4">Elige tu autobús</h2>
+     <div class="flex gap-4 flex-wrap justify-center">
+      <button class="bus-type-select" onclick="selectBusType('microbus')">🚐 Microbús</button> <button class="bus-type-select" onclick="selectBusType('normal')">🚌 Normal</button> <button class="bus-type-select" onclick="selectBusType('articulado')">🚍 Articulado</button>
+     </div><input id="bus-name-input" type="text" placeholder="Dame un nombre a tu bus" class="w-full mt-4 p-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"> <button id="create-btn" onclick="createBus()" class="action-btn w-full mt-4">¡CREAR!</button>
+    </div><!-- Pet Display -->
+    <div id="pet-container" class="hidden bg-white rounded-lg shadow-lg p-8 mb-8 text-center">
+     <h2 id="bus-title" class="text-3xl font-bold text-gray-800 mb-2">Mi autobús</h2>
+     <p id="bus-variant" class="text-lg text-purple-600 font-semibold mb-1"></p>
+     <p id="bus-stage" class="text-sm text-gray-600 mb-4"></p><!-- Bus Image -->
+     <div class="flex justify-center mb-6">
+      <img id="bus-image" src="https://ejemplo.com/bus-1.png" alt="Mi autobús" loading="lazy" class="bus-image" onerror="this.style.background='#e5e7eb'; this.alt='Imagen no disponible';">
+     </div><!-- Experience Bar -->
+     <div class="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
+      <div class="flex justify-between mb-2">
+       <span class="text-gray-700 font-bold">Experiencia</span> <span id="experience-text" class="text-gray-700">0/100</span>
+      </div>
+      <div class="stat-bar">
+       <div id="experience-fill" class="stat-fill" style="background: linear-gradient(90deg, #FFD93D 0%, #FF6B6B 100%); width: 0%"></div>
+      </div>
+     </div><!-- Stats -->
+     <div class="space-y-4 mb-8">
+      <div>
+       <div class="flex justify-between mb-2">
+        <span class="text-gray-700 font-bold">Gasoil</span> <span id="hunger-text" class="text-gray-700">100%</span>
+       </div>
+       <div class="stat-bar">
+        <div id="hunger-fill" class="stat-fill" style="width: 100%"></div>
+       </div>
+      </div>
+      <div>
+       <div class="flex justify-between mb-2">
+        <span class="text-gray-700 font-bold">Felicidad</span> <span id="happiness-text" class="text-gray-700">100%</span>
+       </div>
+       <div class="stat-bar">
+        <div id="happiness-fill" class="stat-fill" style="width: 100%"></div>
+       </div>
+      </div>
+      <div>
+       <div class="flex justify-between mb-2">
+        <span class="text-gray-700 font-bold">Limpieza</span> <span id="cleanliness-text" class="text-gray-700">100%</span>
+       </div>
+       <div class="stat-bar">
+        <div id="cleanliness-fill" class="stat-fill" style="width: 100%"></div>
+       </div>
+      </div>
+      <div>
+       <div class="flex justify-between mb-2">
+        <span class="text-gray-700 font-bold">Energía</span> <span id="energy-text" class="text-gray-700">100%</span>
+       </div>
+       <div class="stat-bar">
+        <div id="energy-fill" class="stat-fill" style="width: 100%"></div>
+       </div>
+      </div>
+     </div><!-- Statistics -->
+     <div class="grid grid-cols-2 gap-3 mb-6 p-4 bg-blue-50 rounded-lg">
+      <div>
+       <span class="text-gray-600 text-sm">Rutas Completadas</span>
+       <p id="routes-completed" class="text-2xl font-bold text-blue-600">0</p>
+      </div>
+      <div>
+       <span class="text-gray-600 text-sm">Limpiezas</span>
+       <p id="cleans-completed" class="text-2xl font-bold text-green-600">0</p>
+      </div>
+     </div><!-- Actions -->
+     <div class="grid grid-cols-2 gap-4 mb-6">
+      <button id="feed-btn" onclick="feedBus()" class="action-btn">🔋 <span id="feed-label">Gasoil</span></button> <button id="play-btn" onclick="playBus()" class="action-btn">🛣️ <span id="play-label">Ruta</span></button> <button id="clean-btn" onclick="cleanBus()" class="action-btn">🧼 <span id="clean-label">Lavar</span></button> <button id="sleep-btn" onclick="sleepBus()" class="action-btn">😴 <span id="sleep-label">Descanso</span></button>
+     </div><button id="upgrade-btn" onclick="upgradeBus()" class="action-btn w-full mb-6">⭐ <span id="upgrade-label">Mejorar</span></button><!-- Message -->
+     <div id="message-box" class="message-box hidden">
+      <span id="message-text"></span>
+     </div><!-- Delete Button --> <button onclick="deleteBus()" class="mt-6 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">🗑️ Eliminar</button>
+    </div>
+   </div>
+  </main>
+  <script>
+    // Bus type images mapping - Sistema Complejo
+    const BUS_CONFIG = {
+      microbus: {
+        name: '🚐 Microbús',
+        color: '#FF6B6B',
+        variants: [
+          {
+            id: 'microbus-1',
+            name: 'Microbús Clásico',
+            stages: {
+              viejo: 'https://images.example.com/microbus-1-viejo.png',
+              mercedes: 'https://images.example.com/microbus-1-mercedes.png'
+            }
+          }
+        ]
+      },
+      normal: {
+        name: '🚌 Normal',
+        color: '#4ECDC4',
+        variants: [
+          {
+            id: 'normal-1',
+            name: 'Normal Urbano #1',
+            stages: {
+              normal: 'https://images.example.com/normal-1-normal.png',
+              volvo: 'https://images.example.com/normal-1-volvo.png',
+              mercedes: 'https://images.example.com/normal-1-mercedes.png',
+              castrosua: 'https://images.example.com/normal-1-castrosua.png',
+              solaris: 'https://images.example.com/normal-1-solaris.png'
+            }
+          },
+          {
+            id: 'normal-2',
+            name: 'Normal Urbano #2',
+            stages: {
+              normal: 'https://images.example.com/normal-2-normal.png',
+              volvo: 'https://images.example.com/normal-2-volvo.png',
+              mercedes: 'https://images.example.com/normal-2-mercedes.png',
+              castrosua: 'https://images.example.com/normal-2-castrosua.png',
+              solaris: 'https://images.example.com/normal-2-solaris.png'
+            }
+          },
+          {
+            id: 'normal-3',
+            name: 'Normal Urbano #3',
+            stages: {
+              normal: 'https://images.example.com/normal-3-normal.png',
+              volvo: 'https://images.example.com/normal-3-volvo.png',
+              mercedes: 'https://images.example.com/normal-3-mercedes.png',
+              castrosua: 'https://images.example.com/normal-3-castrosua.png',
+              solaris: 'https://images.example.com/normal-3-solaris.png'
+            }
+          },
+          {
+            id: 'normal-4',
+            name: 'Normal Urbano #4',
+            stages: {
+              normal: 'https://images.example.com/normal-4-normal.png',
+              volvo: 'https://images.example.com/normal-4-volvo.png',
+              mercedes: 'https://images.example.com/normal-4-mercedes.png',
+              castrosua: 'https://images.example.com/normal-4-castrosua.png',
+              solaris: 'https://images.example.com/normal-4-solaris.png'
+            }
+          },
+          {
+            id: 'normal-5',
+            name: 'Normal Urbano #5',
+            stages: {
+              normal: 'https://images.example.com/normal-5-normal.png',
+              volvo: 'https://images.example.com/normal-5-volvo.png',
+              mercedes: 'https://images.example.com/normal-5-mercedes.png',
+              castrosua: 'https://images.example.com/normal-5-castrosua.png',
+              solaris: 'https://images.example.com/normal-5-solaris.png'
+            }
+          },
+          {
+            id: 'normal-6',
+            name: 'Normal Urbano #6',
+            stages: {
+              normal: 'https://images.example.com/normal-6-normal.png',
+              volvo: 'https://images.example.com/normal-6-volvo.png',
+              mercedes: 'https://images.example.com/normal-6-mercedes.png',
+              castrosua: 'https://images.example.com/normal-6-castrosua.png',
+              solaris: 'https://images.example.com/normal-6-solaris.png'
+            }
+          },
+          {
+            id: 'normal-7',
+            name: 'Normal Urbano #7',
+            stages: {
+              normal: 'https://images.example.com/normal-7-normal.png',
+              volvo: 'https://images.example.com/normal-7-volvo.png',
+              mercedes: 'https://images.example.com/normal-7-mercedes.png',
+              castrosua: 'https://images.example.com/normal-7-castrosua.png',
+              solaris: 'https://images.example.com/normal-7-solaris.png'
+            }
+          },
+          {
+            id: 'normal-8',
+            name: 'Normal Urbano #8',
+            stages: {
+              normal: 'https://images.example.com/normal-8-normal.png',
+              volvo: 'https://images.example.com/normal-8-volvo.png',
+              mercedes: 'https://images.example.com/normal-8-mercedes.png',
+              castrosua: 'https://images.example.com/normal-8-castrosua.png',
+              solaris: 'https://images.example.com/normal-8-solaris.png'
+            }
+          }
+        ]
+      },
+      articulado: {
+        name: '🚍 Articulado',
+        color: '#FFD93D',
+        variants: [
+          {
+            id: 'articulado-1',
+            name: 'Articulado Expreso #1',
+            stages: {
+              viejo: 'https://images.example.com/articulado-1-viejo.png',
+              normal: 'https://images.example.com/articulado-1-normal.png',
+              mercedes: 'https://images.example.com/articulado-1-mercedes.png'
+            }
+          },
+          {
+            id: 'articulado-2',
+            name: 'Articulado Expreso #2',
+            stages: {
+              viejo: 'https://images.example.com/articulado-2-viejo.png',
+              normal: 'https://images.example.com/articulado-2-normal.png',
+              mercedes: 'https://images.example.com/articulado-2-mercedes.png'
+            }
+          },
+          {
+            id: 'articulado-3',
+            name: 'Articulado Expreso #3',
+            stages: {
+              viejo: 'https://images.example.com/articulado-3-viejo.png',
+              normal: 'https://images.example.com/articulado-3-normal.png',
+              mercedes: 'https://images.example.com/articulado-3-mercedes.png'
+            }
+          }
+        ]
+      }
+    };
+
+    let currentBusType = null;
+    let currentBus = null;
+    let gameLoop = null;
+    let stageIndex = 0;
+    const STAGES = {
+      microbus: ['viejo', 'mercedes'],
+      normal: ['normal', 'volvo', 'mercedes', 'castrosua', 'solaris'],
+      articulado: ['viejo', 'normal', 'mercedes']
+    };
+
+    function selectBusType(type) {
+      currentBusType = type;
+      document.querySelectorAll('.bus-type-select').forEach(btn => {
+        btn.style.opacity = '0.5';
+      });
+      event.target.style.opacity = '1';
+    }
+
+    function getRandomVariant(type) {
+      const variants = BUS_CONFIG[type].variants;
+      return variants[Math.floor(Math.random() * variants.length)];
+    }
+
+    function getRandomStage(type) {
+      const stages = STAGES[type];
+      return stages[Math.floor(Math.random() * stages.length)];
+    }
+
+    function getBusImage(variant, stage) {
+      return variant.stages[stage] || 'https://images.example.com/default.png';
+    }
+
+    function createBus() {
+      const name = document.getElementById('bus-name-input').value.trim();
+      
+      if (!name) {
+        showMessage('¡Dale un nombre a tu bus!');
+        return;
+      }
+
+      if (!currentBusType) {
+        showMessage('¡Elige un tipo de autobús!');
+        return;
+      }
+
+      const variant = getRandomVariant(currentBusType);
+      const stage = getRandomStage(currentBusType);
+      const imageUrl = getBusImage(variant, stage);
+
+      currentBus = {
+        name: name,
+        type: currentBusType,
+        variantId: variant.id,
+        variantName: variant.name,
+        currentStage: stage,
+        imageUrl: imageUrl,
+        hunger: 100,
+        happiness: 100,
+        cleanliness: 100,
+        energy: 100,
+        level: 1,
+        experience: 0,
+        maxExperience: 100,
+        age: 0,
+        isSleeping: false,
+        createdAt: new Date().toISOString(),
+        totalRoutesCompleted: 0,
+        totalCleans: 0,
+        availableStages: STAGES[currentBusType]
+      };
+
+      saveBus();
+      renderBus();
+      document.getElementById('pet-container').classList.remove('hidden');
+      document.getElementById('bus-name-input').value = '';
+    }
+
+    function saveBus() {
+      localStorage.setItem('vitrasa_pet', JSON.stringify(currentBus));
+    }
+
+    function loadBus() {
+      const saved = localStorage.getItem('vitrasa_pet');
+      if (saved) {
+        currentBus = JSON.parse(saved);
+      }
+    }
+
+    function renderBus() {
+      if (!currentBus) return;
+
+      document.getElementById('bus-title').textContent = `${currentBus.name} (Nivel ${currentBus.level})`;
+      document.getElementById('bus-variant').textContent = currentBus.variantName;
+      document.getElementById('bus-stage').textContent = `Etapa: ${currentBus.currentStage.charAt(0).toUpperCase() + currentBus.currentStage.slice(1)}`;
+      document.getElementById('bus-image').src = currentBus.imageUrl;
+      document.getElementById('routes-completed').textContent = currentBus.totalRoutesCompleted;
+      document.getElementById('cleans-completed').textContent = currentBus.totalCleans;
+
+      // Update stats display
+      updateStatDisplay('hunger');
+      updateStatDisplay('happiness');
+      updateStatDisplay('cleanliness');
+      updateStatDisplay('energy');
+      updateLevelDisplay();
+
+      // Apply sleeping animation
+      const busImage = document.getElementById('bus-image');
+      if (currentBus.isSleeping) {
+        busImage.classList.add('sleeping-animation');
+      } else {
+        busImage.classList.remove('sleeping-animation');
+      }
+    }
+
+    function updateStatDisplay(stat) {
+      const value = currentBus[stat];
+      const fillElement = document.getElementById(`${stat}-fill`);
+      const textElement = document.getElementById(`${stat}-text`);
+      
+      fillElement.style.width = `${Math.max(0, value)}%`;
+      textElement.textContent = `${Math.max(0, Math.floor(value))}%`;
+    }
+
+    function updateLevelDisplay() {
+      const expFill = document.getElementById('experience-fill');
+      const expText = document.getElementById('experience-text');
+      const expPercentage = (currentBus.experience / currentBus.maxExperience) * 100;
+      
+      expFill.style.width = `${Math.max(0, expPercentage)}%`;
+      expText.textContent = `${Math.floor(currentBus.experience)}/${currentBus.maxExperience}`;
+    }
+
+    function feedBus() {
+      if (!currentBus || currentBus.isSleeping) return;
+      
+      currentBus.hunger = Math.min(100, currentBus.hunger + 30);
+      currentBus.energy = Math.max(0, currentBus.energy - 5);
+      currentBus.experience += 10;
+      checkLevelUp();
+      
+      showMessage('¡Tanque lleno! 🔋');
+      saveBus();
+      renderBus();
+    }
+
+    function playBus() {
+      if (!currentBus || currentBus.isSleeping) return;
+      
+      currentBus.happiness = Math.min(100, currentBus.happiness + 25);
+      currentBus.hunger = Math.max(0, currentBus.hunger - 20);
+      currentBus.energy = Math.max(0, currentBus.energy - 15);
+      currentBus.experience += 20;
+      currentBus.totalRoutesCompleted += 1;
+      
+      // Random stage change
+      if (Math.random() < 0.3) {
+        const randomStage = currentBus.availableStages[Math.floor(Math.random() * currentBus.availableStages.length)];
+        currentBus.currentStage = randomStage;
+        currentBus.imageUrl = getBusImage(
+          BUS_CONFIG[currentBus.type].variants.find(v => v.id === currentBus.variantId),
+          randomStage
+        );
+        showMessage(`¡Ruta completada! 🛣️ Ahora tienes etapa ${randomStage}`);
+      } else {
+        showMessage('¡Ruta completada! 🛣️');
+      }
+      
+      checkLevelUp();
+      saveBus();
+      renderBus();
+    }
+
+    function cleanBus() {
+      if (!currentBus || currentBus.isSleeping) return;
+      
+      currentBus.cleanliness = Math.min(100, currentBus.cleanliness + 35);
+      currentBus.energy = Math.max(0, currentBus.energy - 10);
+      currentBus.experience += 15;
+      currentBus.totalCleans += 1;
+      
+      showMessage('¡Brilla como nuevo! ✨');
+      checkLevelUp();
+      saveBus();
+      renderBus();
+    }
+
+    function sleepBus() {
+      if (!currentBus) return;
+      
+      currentBus.isSleeping = !currentBus.isSleeping;
+      
+      if (currentBus.isSleeping) {
+        showMessage('¡Durmiendo... 😴');
+        clearInterval(gameLoop);
+        gameLoop = setInterval(() => {
+          if (currentBus.isSleeping) {
+            currentBus.energy = Math.min(100, currentBus.energy + 15);
+            currentBus.hunger = Math.max(0, currentBus.hunger - 5);
+            saveBus();
+            renderBus();
+          }
+        }, 2000);
+      } else {
+        showMessage('¡Despierto y listo! 🚌');
+        clearInterval(gameLoop);
+      }
+      
+      saveBus();
+      renderBus();
+    }
+
+    function upgradeBus() {
+      if (!currentBus || currentBus.isSleeping) return;
+      
+      if (currentBus.experience < currentBus.maxExperience) {
+        showMessage(`¡Necesitas ${currentBus.maxExperience - currentBus.experience} puntos más!`);
+        return;
+      }
+      
+      checkLevelUp();
+    }
+
+    function checkLevelUp() {
+      if (currentBus.experience >= currentBus.maxExperience) {
+        currentBus.level += 1;
+        currentBus.experience = 0;
+        currentBus.maxExperience = Math.floor(currentBus.maxExperience * 1.5);
+        currentBus.hunger = Math.min(100, currentBus.hunger + 20);
+        currentBus.happiness = Math.min(100, currentBus.happiness + 20);
+        currentBus.cleanliness = Math.min(100, currentBus.cleanliness + 20);
+        currentBus.energy = Math.min(100, currentBus.energy + 30);
+        
+        showMessage(`¡¡¡SUBIDA DE NIVEL!!! Ahora eres Nivel ${currentBus.level} 🎉`);
+      }
+    }
+
+    function deleteBus() {
+      currentBus = null;
+      localStorage.removeItem('vitrasa_pet');
+      document.getElementById('pet-container').classList.add('hidden');
+      document.querySelectorAll('.bus-type-select').forEach(btn => {
+        btn.style.opacity = '1';
+      });
+      showMessage('¡Tu bus ha sido eliminado!');
+    }
+
+    function showMessage(text) {
+      const messageBox = document.getElementById('message-box');
+      const messageText = document.getElementById('message-text');
+      messageText.textContent = text;
+      messageBox.classList.remove('hidden');
+      
+      setTimeout(() => {
+        messageBox.classList.add('hidden');
+      }, 3000);
+    }
+
+    function initElementSdk() {
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig: {
+            title_text: 'VITRASA Pet Pro',
+            feed_label: 'Gasoil',
+            play_label: 'Ruta',
+            clean_label: 'Lavar',
+            sleep_label: 'Descanso',
+            upgrade_label: 'Mejorar'
+          },
+          onConfigChange: async (config) => {
+            document.getElementById('main-title').textContent = config.title_text || 'VITRASA Pet Pro';
+            document.getElementById('feed-label').textContent = config.feed_label || 'Gasoil';
+            document.getElementById('play-label').textContent = config.play_label || 'Ruta';
+            document.getElementById('clean-label').textContent = config.clean_label || 'Lavar';
+            document.getElementById('sleep-label').textContent = config.sleep_label || 'Descanso';
+            document.getElementById('upgrade-label').textContent = config.upgrade_label || 'Mejorar';
+          },
+          mapToCapabilities: () => ({
+            recolorables: [],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ['title_text', config.title_text || 'VITRASA Pet Pro'],
+            ['feed_label', config.feed_label || 'Gasoil'],
+            ['play_label', config.play_label || 'Ruta'],
+            ['clean_label', config.clean_label || 'Lavar'],
+            ['sleep_label', config.sleep_label || 'Descanso'],
+            ['upgrade_label', config.upgrade_label || 'Mejorar']
+          ])
+        });
+      }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+      loadBus();
+      if (currentBus) {
+        renderBus();
+        document.getElementById('pet-container').classList.remove('hidden');
+      }
+      initElementSdk();
+    });
+
+    // Decay stats over time
+    setInterval(() => {
+      if (currentBus && !currentBus.isSleeping) {
+        currentBus.hunger = Math.max(0, currentBus.hunger - 0.5);
+        currentBus.happiness = Math.max(0, currentBus.happiness - 0.3);
+        currentBus.cleanliness = Math.max(0, currentBus.cleanliness - 0.2);
+        currentBus.energy = Math.max(0, currentBus.energy - 0.1);
+        currentBus.age += 1;
+        saveBus();
+        renderBus();
+      }
+    }, 3000);
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e6018ec90fe17f6',t:'MTc3NTEzNTY3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
